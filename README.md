@@ -77,6 +77,9 @@ src/main/java/pokesal/
   modelo/                   Pokesal, Treinador, enums
   batalha/                  dano, vantagem, turno, catálogo
   excecao/                  limite de item, inicial inválido
+relatorios/
+  analise, requisitos, relatorio da fase 1
+  atas/                     reunioes
 ```
 
 ## Checkstyle (Google Java Style)
