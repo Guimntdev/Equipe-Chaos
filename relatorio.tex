@@ -1,0 +1,461 @@
+\documentclass[12pt,oneside,a4paper,article]{abntex2}
+\usepackage[utf8]{inputenc}
+\usepackage{array}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{authblk}
+\usepackage{mathptmx}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,calc}
+
+\usepackage[left=3cm,right=2cm,top=3cm,bottom=2cm]{geometry}
+\usepackage{setspace}
+\linespread{1.25}
+
+\title{\textbf{Testes e Qualidade de Software}\\[0.35em]
+{\large Simulador de Batalha -- PokeSal}\\[0.25em]}
+
+\author{Guilherme Monteiro Da Silva
+\thanks{guilhermemonteiro.silva@ucsal.edu.br}}
+
+\author{Miguel Novaes Palma Santos
+\thanks{miguelnoaves.santos@ucsal.edu.br}}
+
+\author{Dantton Lavigne
+\thanks{dantton.pinheiro@ucsal.edu.br}}
+
+\author{Guilherme Gomes de Magalhães
+\thanks{guilherme.magalhaes@ucsal.edu.br}}
+
+\author[1*]{Pedro Arthur de Melo Nascimento
+\thanks{pedroam.nascimento@pro.ucsal.br}}
+
+\affil{
+Engenharia de Software \par
+Escola de Tecnologias \par
+Universidade Católica do Salvador (UCSAL) \par
+Av. Prof. Pinto de Aguiar, 2589 Pituaçu, CEP: 41740-090 \par
+Salvador/BA, Brasil
+}
+
+\date{Setembro de 2026}
+
+\ifthenelse{\equal{\ABNTEXisarticle}{true}}{%
+\renewcommand{\maketitlehookb}{}
+}{}
+
+\usepackage{hyperref}
+\hypersetup{
+colorlinks=false,
+pdfborder={0 0 0},
+}
+
+\renewcommand*{\Authsep}{, }
+\renewcommand*{\Authand}{, }
+\renewcommand*{\Authands}{, }
+\renewcommand*{\Affilfont}{\normalsize\normalfont}
+\renewcommand*{\Authfont}{\bfseries}
+\setlength{\affilsep}{2em}
+\newsavebox\affbox
+
+\begin{document}
+
+\begin{center}
+\IfFileExists{imagens-template/ucsal_logo.png}{%
+\includegraphics[width=0.3\textwidth]{imagens-template/ucsal_logo.png}%
+}{}
+\end{center}
+{\let\newpage\relax\maketitle}
+
+\begin{resumoumacoluna}
+Relatório da Fase 01 do PokeSal, da Equipe Chaos, na matéria de Testes e
+Qualidade de Software. O jogo é uma batalha 1 contra 1 no estacionamento da
+UCSal: cada um escolhe um inicial, o terreno mexe no dano e a luta vai até
+alguém cair. Aqui entram a leitura do enunciado, os três requisitos autorais,
+os diagramas UML, o que fizemos no código para seguir o Google Java Style,
+os bugs que apareceram no caminho e o trabalho de cada um.
+\noindent
+\newline
+\textbf{Palavras-chaves}: PokeSal. Requisitos. UML. Código limpo. Checkstyle.
+\end{resumoumacoluna}
+
+\textual
+
+\tableofcontents
+\newpage
+
+\section{Introdução}
+
+O trabalho é um torneio de batalhas no estacionamento da UCSal Pituaçu. Cada
+treinador entra com um inicial (BulbaSal, CharSal, SquirtSal, ChikoSal,
+CyndaSal ou TotoSal). A luta é por turno, com tipo, terreno, status e no
+máximo dois itens.
+
+Na Fase 01, entregamos a análise dos requisitos, três regras autorais,
+UML (casos de uso e classes), código no Git e um relatório dizendo o que cada um fez.
+
+\section{Análise estática de requisitos}
+\label{sec:inspecao}
+
+Lemos o enunciado antes de sair programando, para marcar o que estava
+claro, o que estava solto e o que a gente ia ter que decidir.
+
+\subsection{O que já vinha pronto}
+
+\begin{itemize}
+  \item um inicial só, entre os seis nomes;
+  \item HP, ATK, DEF, SPD e tipo;
+  \item Fogo, Água e Planta ($2{,}0$x e $0{,}5$x);
+  \item Asfalto Quente: Fogo $+15\%$ de dano;
+  \item Poça de Chuva: Golpes de Água aplicam 10\% adicionais de precisão ou dano;
+  \item Canteiro Central: Planta recupera $5\%$ do HP máximo no fim do turno;
+  \item ordem do turno pela SPD;
+  \item status no fim do turno (Queimado, Envenenado, Paralisado);
+  \item no máximo dois itens, e item gasta o turno.
+\end{itemize}
+
+\subsection{O que o texto deixou em aberto}
+
+A poça de chuva dá ``$10\%$ a mais de precisão ou dano'' para Água. Precisão e
+dano não são a mesma coisa. Se a gente colocasse chance de errar, cada teste
+dava um resultado diferente. Ficamos com \textbf{dano}.
+
+O enunciado cita os status, mas não diz quem aplica. Não tem item de status
+nem sorteio. A gente ligou no golpe elemental: Fogo queima, Água paralisa,
+Planta envenena.
+
+Queimado ``reduz HP e ATK'' sem número. Ficou metade do ATK e $10\%$ do HP
+máximo por turno. Veneno ``progressivo'' também sem detalhe: percentual do
+HP máximo subindo a cada turno ($5\%$, $10\%$, $15\%$\ldots). Paralisia
+corta a SPD pela metade.
+
+Fora isso, o guia do projeto não fala de stats dos iniciais, fórmula de dano, empate de
+SPD, limite de turno, se pode empatar, se status acumula, quanto a Potion
+cura, o que acontece se o HP passar de zero ou do máximo, nem o que fazer
+com nome fora da lista.
+
+A fórmula a gente fechou só para o golpe ter um número. ``Um status por vez'' e ``lutar até o fim'' a gente escolheu de
+proposito, porque o enunciado não cobre.
+
+Quase-contradição: o texto manda ordenar \textbf{estritamente} por SPD e não
+fala de empate. SPD igual precisa de alguma regra. Caso haja empate de SPD, começa quem tem mais ATK; se o ATK empatar também, o treinador 1 começa.
+
+\section{Requisitos autorais}
+\label{sec:autorais}
+
+Três regras nossas, já no sistema e com testes feitos. Desempate de SPD
+por ATK \textbf{não entra} aqui.
+
+\subsection{RA01 -- Combo}
+
+O mesmo golpe duas vezes seguidas: o segundo ganha $+50\%$. Tem golpe
+elemental (tipo + terreno) e Investida (neutra). Trocar de golpe ou usar item
+zera o combo. A Investida existe também para dar para testar o reset: se só
+tivesse um golpe, não tinha como mostrar ``o outro reseta''.
+
+\subsection{RA02 -- Lutar até o fim}
+
+A luta só acaba quando um cai. Sem teto de turno e sem empate. O caso chato
+é os dois zerarem no mesmo tick de status. Aí a gente olha o HP de cada um
+logo antes desse tick: ganha quem tinha mais vida. Se era igual, o treinador 1 vence.
+
+\subsection{RA03 -- Um status por vez}
+
+Não junta Queimado + Veneno + Paralisado. O novo troca o antigo. Antidote
+limpa. Se o veneno entra no lugar da queimadura, o contador do veneno volta
+para zero. O enunciado lista os três e não diz se somam; somar deixava o fim
+de turno uma bagunça.
+
+\section{Modelagem UML}
+\label{sec:uml}
+
+O sistema é todo feito no console (CLI), 1 contra 1, um inicial para cada um, um terreno.
+
+\subsection{Diagrama de casos de uso}
+
+O ator é o treinador (os dois fazem as mesmas coisas): escolher inicial,
+escolher terreno, golpe elemental, Investida, usar item e encerrar a batalha
+quando alguém cai.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  ator/.style={circle, draw, minimum size=0.55cm},
+  uc/.style={ellipse, draw, minimum width=3.3cm, minimum height=0.95cm,
+    align=center, inner sep=2pt},
+  sistema/.style={draw, rounded corners, inner sep=10pt}
+]
+  \node[ator] (cabeca) {};
+  \draw ($(cabeca.south)+(0,-0.05)$) -- ++(0,-0.85);
+  \draw ($(cabeca.south)+(0,-0.35)$) -- ++(-0.35,-0.25);
+  \draw ($(cabeca.south)+(0,-0.35)$) -- ++(0.35,-0.25);
+  \draw ($(cabeca.south)+(0,-0.90)$) -- ++(-0.3,-0.45);
+  \draw ($(cabeca.south)+(0,-0.90)$) -- ++(0.3,-0.45);
+  \node[below] at ($(cabeca.south)+(0,-1.45)$) {Treinador};
+
+  \node[uc, right=2.4cm of cabeca, yshift=2.3cm] (c1) {Escolher inicial};
+  \node[uc, below=0.28cm of c1] (c2) {Escolher terreno};
+  \node[uc, below=0.28cm of c2] (c3) {Golpe elemental};
+  \node[uc, below=0.28cm of c3] (c4) {Usar Investida};
+  \node[uc, below=0.28cm of c4] (c5) {Usar item};
+  \node[uc, below=0.28cm of c5] (c6) {Encerrar batalha};
+
+  \node[sistema, fit=(c1)(c2)(c3)(c4)(c5)(c6),
+    label=above:Sistema PokeSal] {};
+
+  \foreach \n in {c1,c2,c3,c4,c5,c6}
+    \draw[-{Stealth}] (cabeca.east) -- (\n.west);
+\end{tikzpicture}
+\caption{Casos de uso do PokeSal.}
+\label{fig:casos-uso}
+\end{figure}
+
+Inicial fora da lista não entra. Terceiro item também não. Encerrar batalha
+não é botão do menu: acontece quando o HP chega a zero, e sempre tem
+vencedor (RA02).
+
+\subsection{Diagrama de classes}
+
+Domínio em \texttt{pokesal.modelo}, luta em \texttt{pokesal.batalha},
+exceção em \texttt{pokesal.excecao}. O \texttt{Main} só lê o que o usuário
+digitou e manda a batalha resolver o turno.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\scriptsize,
+  cls/.style={draw, rectangle, align=left, inner sep=4pt},
+  enu/.style={draw, rectangle, align=left, inner sep=4pt, fill=gray!8}
+]
+  \node[cls] (treinador) {%
+    \textbf{Treinador}\\[-1pt]
+    \hline
+    $-$ nome: String\\
+    $-$ pokesal: Pokesal\\
+    $-$ itensUsados: int\\[-1pt]
+    \hline
+    $+$ usarItem(item)\\
+    $+$ getItensRestantes()
+  };
+
+  \node[cls, right=0.55cm of treinador] (pokesal) {%
+    \textbf{Pokesal}\\[-1pt]
+    \hline
+    $-$ nome, tipo, hp, atk, def, spd\\
+    $-$ status: StatusEfeito\\
+    $-$ ultimoGolpe: TipoGolpe\\[-1pt]
+    \hline
+    $+$ getAtkEfetivo() / getSpdEfetivo()\\
+    $+$ aplicarStatus(status)\\
+    $+$ aplicarEfeitosStatusFimTurno()\\
+    $+$ isCombo(golpe) / registrarGolpe()
+  };
+
+  \node[cls, below=0.7cm of treinador] (batalha) {%
+    \textbf{Batalha}\\[-1pt]
+    \hline
+    $-$ treinador1, treinador2\\
+    $-$ terreno: Terreno\\[-1pt]
+    \hline
+    $+$ obterOrdemDeAtaque()\\
+    $+$ executarAcao(...)\\
+    $+$ resolverTurno(...)\\
+    $+$ obterVencedor()
+  };
+
+  \node[cls, right=0.55cm of batalha] (calc) {%
+    \textbf{CalculadoraDano}\\[-1pt]
+    \hline
+    \hline
+    $+$ calcular(...)\\
+    $+$ obterMultiplicadorTerreno(...)
+  };
+
+  \node[cls, below=0.7cm of batalha] (cat) {%
+    \textbf{CatalogoInicial}\\[-1pt]
+    \hline
+    \hline
+    $+$ criar(nome)\\
+    $+$ nomesPermitidos()
+  };
+
+  \node[enu, right=0.55cm of cat] (enums) {%
+    \textbf{Enumerações}\\[-1pt]
+    \hline
+    TipoElemental \quad Terreno\\
+    StatusEfeito \quad TipoItem\\
+    AcaoTurno \quad TipoGolpe
+  };
+
+  \node[cls, below=0.7cm of cat] (ex) {%
+    \textbf{Exceções}\\[-1pt]
+    \hline
+    InicialInvalidoException\\
+    LimiteItensExcedidoException
+  };
+
+  \draw[-{Stealth}] (treinador) -- node[above, font=\tiny] {1} (pokesal);
+  \draw[-{Stealth}] (batalha.north) -- (treinador.south);
+  \draw[-{Stealth}] (batalha) -- (calc);
+  \draw[-{Stealth}] (batalha.east) -- ++(0.35,0) |- (pokesal.south);
+\end{tikzpicture}%
+}
+\caption{Classes da Fase 01.}
+\label{fig:classes}
+\end{figure}
+
+\texttt{Treinador} tem um \texttt{Pokesal} e conta item.
+\texttt{Batalha} guarda os dois, o terreno, a ordem por SPD e o fim do turno.
+\texttt{Pokesal} segura HP, status e combo. Nome inválido vira
+\texttt{InicialInvalidoException}. Terceiro item vira
+\texttt{LimiteItensExcedidoException}.
+
+\section{Implementação e boas práticas (Checkstyle)}
+\label{sec:checkstyle}
+
+O código está no repositório Git, nos pacotes \texttt{pokesal}, \texttt{modelo},
+\texttt{batalha} e \texttt{excecao}. A matéria pede Google Java Style. O que
+a gente aplicou:
+
+\begin{itemize}
+  \item classe em PascalCase, método/variável em camelCase, constante em
+        UPPER\_SNAKE;
+  \item Javadoc em classe e método público;
+  \item número fixo de dano, vantagem, item e status em
+        \texttt{ConstantesBatalha};
+  \item linha por volta de 100 caracteres e indentação de 2 espaços;
+  \item import um a um, sem importar o pacote inteiro ou incluir WildCards.
+\end{itemize}
+
+O console pergunta treinador, inicial e terreno, e roda turno até ter
+vencedor.
+
+\section{Problemas encontrados e correções}
+\label{sec:bugs}
+
+Isso aqui apareceu quando a gente foi montar e testar no console:
+
+\textbf{Null na hora de criar a luta.} Dava para subir batalha sem treinador,
+sem Pokésal ou sem terreno. Quebrava no meio do turno, com erro genérico.
+Agora isso é recusado na entrada.
+
+\textbf{HP negativo e cura sem teto.} Golpe forte ia para baixo de zero;
+Potion com a vida cheia passava do máximo. HP para em zero; cura para no
+máximo da espécie.
+
+\textbf{Inicial inventado.} Qualquer nome passava. Agora só os seis; o resto
+cai numa exceção só para isso.
+
+\textbf{Terceiro item.} O limite era dois, mas a terceira tentativa não
+falhava de um jeito que o teste pegasse. A gente passou a lançar a exceção de limite
+e, no console, a pessoa escolhe outra ação em vez de o programa morrer.
+
+\textbf{SPD igual.} Os dois com a mesma velocidade: a ordem mudava sem
+regra. Como o enunciado não cobre, desempate por ATK (não é autoral).
+
+\textbf{Os dois caíam no status.} Dois queimados, pouca vida, o tick zerava
+os dois e não tinha vencedor. A gente guarda o HP de antes do tick e usa
+isso para decidir.
+
+\textbf{Combo depois do item.} O $+50\%$ seguia mesmo depois de usar item.
+Item gasta o turno, então o combo zera.
+
+\textbf{Status empilhado.} Dava para estar queimado e envenenado juntos, e o
+fim do turno cobrava os dois. Virou o RA03: o novo troca o antigo.
+
+\textbf{Número solto e import de pacote.} Percentual escrito na conta e
+import com asterisco. Foi para constante nomeada e import explícito, que é
+o que o Checkstyle pede.
+
+Se a gente entregasse assim, isso ia aparecer na arguição. Por isso
+corrigimos ainda nesta fase.
+
+\section{Relatório de contribuição individual}
+\label{sec:contribuicao}
+
+A divisão saiu na reunião de 18/09/2026, 18h00--20h30, no Google Meet. A
+segunda foi em 20/09/2026, 21h00--00h00: fechar código, revisar autoral,
+corrigir o que estava quebrando e organizar o Git. Os quatro estavam nas
+duas.
+
+\subsection{Guilherme Monteiro Da Silva}
+
+A inspeção de requisitos foi de Guilherme Monteiro. Ele leu o enunciado
+antes da gente programar e marcou detalhes importantes, como a observação da poça de chuva deixar em aberto ``precisão ou dano'', falta de
+fórmula, empate de SPD, status sem número e o fato de o texto não dizer
+como o status entra na luta. Isso virou a Seção~\ref{sec:inspecao}.
+
+\subsection{Guilherme Gomes de Magalhães}
+
+Os três autorais são de Guilherme Gomes: Combo, lutar até o fim e um status
+por vez. Também ajudou a deixar claro que desempate de SPD por ATK não
+é um requisito autoral, e sim correção do enunciado. O texto da Seção~\ref{sec:autorais} é
+desse trabalho.
+
+\subsection{Miguel Novaes Palma Santos}
+
+Os diagramas UML são de Miguel: casos de uso e classes, batendo com o
+que o PokeSal faz de verdade (inicial, terreno, golpe, item, encerrar;
+\texttt{Treinador}, \texttt{Pokesal}, \texttt{Batalha},
+\texttt{CalculadoraDano}, catálogo, enum e exceção).
+
+\subsection{Dantton Lavigne}
+
+Quem cuidou da maior parte do código foi Dantton: pacotes, interface no console, constante
+nomeada, Javadoc, indentação, imports e o ambiente para o
+resto da equipe rodar testes e apontar erros e acertos. Realizou também a primeira leva de testes com os nomes da
+Fase 02 e a conferência do Checkstyle.
+
+\subsection{O que a gente fez junto}
+
+Os quatro rodaram o projeto, bateram os autorais com o que estava
+funcionando, corrigiram o que está na Seção~\ref{sec:bugs} e conferiram o
+que ia para o repositório.
+
+\section{Uso de inteligência artificial}
+\label{sec:ia}
+
+A gente usou IA em duas frentes nesta fase: passar o olho na ortografia
+deste relatório e entender erro que o compilador apontava. Não foi a
+ferramenta escrevendo o trabalho no nosso lugar. A gente redigia, compilava,
+e quando o texto ou o build quebrava pedia ajuda para achar o que estava
+errado.
+
+No relatório, o que mais aparecia era acento, concordância e frase pela
+metade depois de um recorte. Um exemplo bobo: ``proposito'' sem acento.
+Outro: a gente tinha combinado escrever ``de fulano'' (e não ``do fulano''),
+e a revisão só checava se isso tinha escapado. A sugestão vinha, a gente
+lia e aceitava ou não.
+
+No compilador, dois tipos de erro repetiram. No Java, o Ctrl+F5 caía em
+\texttt{ClassNotFoundException} no \texttt{Main}: o programa procurava a
+classe em \texttt{target/classes} e a pasta estava vazia, porque o código
+ainda não tinha sido compilado nessa pasta. No \LaTeX{}, o que mais
+atrapalhou foi arquivo de logo que não existia
+(\texttt{imagens-template/ucsal\_logo.png}), porcentagem solta no texto
+(o compilador trata \texttt{\%} como comentário e come o resto da linha)
+e nome de classe com underline fora de \texttt{texttt}, que o pdflatex
+reclama. A IA explicava a mensagem; quem mexia no arquivo era a equipe.
+
+Esses usos estão documentados no arquivo \texttt{AI\_DECLARATION.md}, na
+raiz do repositório, junto com os prompts que a gente de fato usou.
+
+\section{Considerações finais}
+
+A Fase 01 termina com o jogo rodando, as regras do enunciado, três autorais, UML
+batendo com o código e fonte no padrão de nome, Javadoc, constantes e imports.
+
+O enunciado tem alguns buracos. A gente marcou, separou o que era correção e o que
+era autoral, e consertou o que só aparece quando o programa roda (null, HP
+inválido, item a mais, combo que não zerava, os dois caindo no mesmo tick).
+Ata, Sonar, checklist de código e o documento de testes da Fase 02 ficam
+para as próximas entregas.
+
+\end{document}
