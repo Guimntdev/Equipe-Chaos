@@ -6,7 +6,7 @@ bin/
 .settings/
 .idea/
 *.iml
-test/
 *.class
+.scannerwork/
 .DS_Store
 Thumbs.db
