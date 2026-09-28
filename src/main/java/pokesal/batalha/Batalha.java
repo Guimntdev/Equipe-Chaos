@@ -215,16 +215,16 @@ public class Batalha {
     if (!nocaute1 && !nocaute2) {
       return null;
     }
-    if (nocaute1 && !nocaute2) {
-      return this.treinador2;
-    }
-    if (nocaute2 && !nocaute1) {
+    if (nocaute1 && nocaute2) {
+      if (this.hpAntesDoStatus1 > this.hpAntesDoStatus2) {
+        return this.treinador1;
+      }
+      if (this.hpAntesDoStatus2 > this.hpAntesDoStatus1) {
+        return this.treinador2;
+      }
       return this.treinador1;
     }
-    if (this.hpAntesDoStatus1 > this.hpAntesDoStatus2) {
-      return this.treinador1;
-    }
-    if (this.hpAntesDoStatus2 > this.hpAntesDoStatus1) {
+    if (nocaute1) {
       return this.treinador2;
     }
     return this.treinador1;

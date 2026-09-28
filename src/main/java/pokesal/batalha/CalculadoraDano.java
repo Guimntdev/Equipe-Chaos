@@ -61,7 +61,7 @@ public class CalculadoraDano {
     int atk = atacante.getAtkEfetivo();
     int def = defensor.getDefEfetivo();
     double bruto = (atk * tipoMult * terrenoMult * ConstantesBatalha.FATOR_DANO)
-        / (double) def;
+        / def;
     if (combo) {
       bruto = bruto * (1.0 + ConstantesBatalha.BONUS_COMBO);
     }

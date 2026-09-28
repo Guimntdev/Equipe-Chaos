@@ -237,16 +237,7 @@ public class Pokesal {
    * @return true se for o mesmo golpe duas vezes seguidas
    */
   public boolean isCombo(TipoGolpe golpeAtual) {
-    if (golpeAtual == null) {
-      return false;
-    }
-    if (this.ultimoGolpe == null) {
-      return false;
-    }
-    if (this.ultimoGolpe == golpeAtual) {
-      return true;
-    }
-    return false;
+    return golpeAtual != null && golpeAtual == this.ultimoGolpe;
   }
 
   /**
