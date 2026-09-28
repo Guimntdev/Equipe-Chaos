@@ -1,0 +1,61 @@
+Equipe Chaos - PokeSal
+Fase 02 - Checklist de Teste Estatico de Codigo (revisao manual)
+Data: 27/09/2026
+
+Revisamos as classes em src/main/java (Main, modelo, batalha e excecao).
+
+1. Todas as variaveis estao inicializadas antes do uso?
+
+Sim. Em Java local sem valor o Eclipse nem deixa compilar. Os atributos das classes (hpAtual, status, itensUsados, ultimoGolpe, etc.) sao setados no construtor. hpAntesDoStatus1 e hpAntesDoStatus2 comecam em 0 na Batalha. Nao achamos caso de usar variavel sem ter atribuido nada.
+
+2. Ha variaveis declaradas e nunca usadas?
+
+Nao. A gente procurou campo e local que ninguem le. O Sonar tambem nao marcou unused. O que tem de variavel extra (tipo hpAntes, curado, texto do relatorio) e usado na hora.
+
+3. Existe codigo inacessivel?
+
+Nao. Nenhum return no meio deixando trecho morto, nenhum if (false). O Main tem while (true) na leitura de opcao, mas tem return quando a opcao e valida, entao nao e codigo morto, e so fica pedindo de novo se a pessoa digitar lixo.
+
+4. Ha codigo duplicado?
+
+Tinha. O Sonar reclamou dos nomes dos iniciais (BulbaSal, CharSal, etc.) escritos 3 vezes no CatalogoInicial. A gente tirou isso e virou constante. A copia do array de nomes tambem tava num for na mao; passou pra Arrays.copyOf.
+
+Ainda tem uns if parecidos no criar() de cada inicial (tipo, HP, ATK, DEF, SPD). Nao unificamos porque cada um tem numero diferente e e facil de ler. Duplicacao do Sonar no projeto ficou 0%.
+
+5. Existem erros de sintaxe?
+
+Nao. Compila no Eclipse e no Maven (mvn test). Se tivesse, nem subia o Main.
+
+6. Ha erros de logica que quebram regras do negocio?
+
+A gente achou umas coisas, mas nao era regra quebrada no sentido de "o jogo calcula errado":
+
+- Empate de SPD o enunciado nao fala. Codigo desempata por ATK, se empatar de novo vai o treinador 1. Isso e correcao de requisito, nao autoral.
+- O Sonar marcou no obterVencedor uma expressao que depois dos ifs ja era sempre verdadeira (nocaute2). A logica do vencedor estava certa, mas o if tava redundante. Reescrevemos: se os dois caem, compara HP de antes do status; se so um cai, o outro ganha. Batalha nao empata.
+- Combo some se usar item ou trocar de golpe. E regra autoral, o teste cobre.
+
+Nao achamos tipo invertido, terreno aplicando no tipo errado, nem o terceiro item passando sem excecao.
+
+7. Ha erros de tipagem?
+
+Nao. Tudo tipado (int, double, enum, Treinador, Pokesal). O unico aviso de tipo que o Sonar deu foi um cast (double) def na CalculadoraDano que nao precisava, porque a conta ja era double. Tiramos o cast. Sem ClassCast, sem misturar String com numero.
+
+8. O fluxo de controle e valido (sem loops infinitos, condicoes impossiveis)?
+
+O loop da batalha no Main e while (!batalha.batalhaEncerrada()). Nao tem teto de turno de proposito (autoral: luta ate um cair). Nao e infinito de verdade porque o HP vai a zero.
+
+O while (true) do menu para quando a opcao esta no intervalo. Se a pessoa so ficar apertando letra, ele pede de novo. Isso e input, nao trava sozinho.
+
+A condicao impossivel era aquela do obterVencedor que o Sonar apontou. Corrigimos. O resto dos if de tipo/terreno/status fecha com else ou return default.
+
+
+9. Outros tipos de erros identificados?
+
+Sim, a maior parte veio do Sonar (code smell / avisos, nao bug de regra):
+
+- System.out no Main: ele queria logger. Nao trocamos. E batalha no console, o jogador tem que ver o texto. Ficou aceito.
+- isCombo com uns 4 if pra devolver true/false. Virou só um return.
+
+Na revisao manual nao apareceu arquivo aberto sem fechar (o Scanner fecha no fim do main) nem exception escondendo regra.
+
+Resumo: sintaxe e tipo ok. Duplicacao e o if redundante do vencedor foram o que a gente de fato mudou no codigo. O resto ou ja estava certo ou e code smell que a gente documentou e nao quis consertar (logger).
